@@ -1,0 +1,37 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define SERVER_PORT 9001 //well-known port만 아니면 돼 
+#define SERVER_IP "192.168.0.63"
+#include "MySocketError.h"
+#pragma comment(lib,"ws2_32")
+int main(void)
+{
+	int result = -1234;
+	//WSAStartup
+	WSADATA wData = { 0 };
+	result = WSAStartup(MAKEWORD(2, 2), &wData);
+	if (result) ErrorExit("WSAStartup");
+	else OKMsg("WSAStartup");
+	//socket
+	SOCKET clientSocket;
+	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (clientSocket == INVALID_SOCKET) ErrorExit("socket");
+	else OKMsg("socket");
+	//connect
+	SOCKADDR_IN Address = { 0 };
+	Address.sin_family = AF_INET;
+	Address.sin_port = htons(SERVER_PORT);
+	Address.sin_addr.s_addr = inet_addr(SERVER_IP);//inet_ntoa
+	result = connect(clientSocket, (SOCKADDR*)&Address, sizeof(Address));
+	if (result == SOCKET_ERROR) ErrorMsg("connect");
+	else OKMsg("connect");
+	//데이터 송수신
+	//closesocket
+	result = closesocket(clientSocket);
+	if (result == SOCKET_ERROR) ErrorMsg("closesocket");
+	else OKMsg("closesocket");
+	//WSACleanup
+	result = WSACleanup();
+	if (result == SOCKET_ERROR) ErrorMsg("WSACleanup");
+	else OKMsg("WSACleanup");
+	return 0;
+}
