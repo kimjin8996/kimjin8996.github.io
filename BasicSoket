@@ -1,0 +1,73 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define SERVER_PORT 9001 //well-known port만 아니면 돼 
+#include "MySocketError.h"   //winsock2.h ->제일 먼저 #include 해야 한다.
+#pragma comment(lib,"ws2_32.lib")
+
+int main(void)
+{
+	//fopen_s, fopen --> fclose
+	//malloc/realloc/calloc --> free
+	int result = -1;
+	//WSAStartup
+	WSADATA wData = { 0 };
+	result = WSAStartup(MAKEWORD(2, 2), &wData);
+	if (!result) OKMsg("WSAStartup");
+	else ErrorExit("WSAStartup");
+	//socket - serverSocket이 만들어져요
+	SOCKET serverSocket;
+	//AF_INET == PF_INET
+	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocket == INVALID_SOCKET)
+		ErrorExit("socket");
+	else OKMsg("socket");
+	//bind -IP/PORT 바인드(묶어준다고)
+	SOCKADDR_IN serverAddress = { 0 };
+	serverAddress.sin_family = AF_INET; //PF_INET
+	// host -> network short bigendian
+	// network - > host ntohs
+	serverAddress.sin_port = htons(SERVER_PORT); //host - to network short
+	//host- >network long  bigendian 서버에만 써야해
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	result = bind(serverSocket, (SOCKADDR*)&serverAddress,
+		sizeof(serverAddress));
+	if (result == SOCKET_ERROR)
+		ErrorMsg("bind");
+	else OKMsg("bind");
+	//listen - 기다리는 놈
+	result = listen(serverSocket, 5);
+	if (result == SOCKET_ERROR)
+		ErrorMsg("listen");
+	else OKMsg("listen");
+	//accept - clientSocket이 만들어져요
+	SOCKET clientSocket;
+	SOCKADDR_IN clientAddress = { 0 };
+	int sizeClientAddress = sizeof(clientAddress);
+	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddress,
+		&sizeClientAddress);
+	if (clientSocket == INVALID_SOCKET)
+		ErrorMsg("accept");
+	else OKMsg("accept");
+	printf("client(IP:%s,PORT:%d)accepted\n",
+		inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
+
+	//데이터송수신 send/recv
+
+	//closesocket - clientSocket을 닫는거
+	result = closesocket(clientSocket);
+	if (result == SOCKET_ERROR)
+		ErrorMsg("closesocket-client");
+	else OKMsg("closesocket-client");
+
+	//closesocket -serverSocket닫는거
+	result = closesocket(serverSocket);
+	if (result == SOCKET_ERROR)
+		ErrorMsg("closesocket-server");
+	else OKMsg("closesocket-server");
+
+	//WSACleanup
+	result = WSACleanup();
+	if (result == SOCKET_ERROR)
+		ErrorMsg("WSACleanup");
+	else OKMsg("WSACleanup");
+	return 0;
+}
