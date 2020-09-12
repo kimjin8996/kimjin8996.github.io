@@ -1,0 +1,100 @@
+//WSAStartup
+	 WSADATA wData = { 0 };
+	result=WSAStartup (MAKEWORD(2, 2) ,&wData);
+	if (!result)OKMsg("WSAStartup");
+	else ErrorExit("WSAStartup");
+1) socket()함수를 이용하여 새로운 소켓을 생성한다.
+
+#include <sys/types.h>
+#include <sys/socket.h>
+int socket(int family, int type, int protocol)
+  input:
+    -family : 주소체계 (AF_INET, AF_ISO....) 인터넷 주소체계 사용
+    -type : 소켓 유형 (SOCK_STREAM, SOCK_DGRAM, ....) TCP의 연결 통신
+    -protocol : 프로토콜
+  output:
+    -정상 : 소켓 식별자(디스크립터 번호 또는 기술자라고도 표현)
+    -오류 : (-1)
+
+2) bind()함수를 사용하여 자신의 IP주소와 포트 번호를 설정한다. server에서만 지정한다.
+
+int bind(int sockfd, struct sockaddr *my_addr, int addrlen)
+  input:
+    -sockfd : 소켓 식별자
+    -*my_addr : 프로토콜 패밀리, IP, port가 저장된 소켓구조체(sockaddr_in)
+    -addrlen : myaddr 구조체의 크기
+  output:
+    -정상 : (0)
+    -오류 : (-1)
+
+struct sockaddr_in {
+        short int sin_family; //어드레스 페밀리
+        unsigned short int sin_port; //포트 넘버 //htons()변환해 줘야한다
+        struct in_addr sin_addr; //IP주소 //htonl()으로 변환해야한다
+        unsigned char sin_zero[8]; //struct sockaddr와 크기를 맞추기 위해사용                                     //0으로 채워져야 한다.
+  };
+
+
+3) listen()함수로 접속대기 큐의 접속 최대 연결 가능 숫자를 정한다. server에서만 지정.
+
+int listen(int sockfd, int backlog)
+  input:
+    -sockfd : 소켓 식별자
+    -backlog : 연결 요청이 가능한 클라이언트 수
+  output:
+    -정상 : (0)
+
+    -오류 : (-1)
+
+
+4) 서버프로세스에서 accept()함수를 이용하여 클라이언트로부터 연결 요청이 들어오기를 기다린다.
+
+#include <sys/socket.h>
+int accept(int sockfd, struct sockaddr *addr, int *addrlen);
+  input:
+    -sockfd : 소켓 식별자
+    -*addr : 연결을 요청한 클라이언트의 소켓 주소정보가 저장될 구조체
+    -*addrlen : addr 구조체 크기 //in-out변수 포인터
+  output:
+    -정상 : 새로 연결된 소켓 식별자
+    -오류 : (-1)
+
+5) connect()함수를 이용한 클라이언트에서 서버로의 연결 요청.
+
+#include <sys/types.h>
+#include <sys/socket.h>
+int connect(int sockfd, struct sockaddr *serv_addr, int addrlen);
+  input:
+    -sockfd : 소켓 식별자
+    -serv_addr : 서버의 수켓 주소를 가리키는 구조체 포인터
+    -addrlen : serv_addr 구조체 크기
+  output:
+    -정상 : (0)
+    -오류 : (-1)
+
+6) send()함수로 소켓을 통해 데이터 전송
+
+int send(int sockfd, const void *msg, int len, int flags);
+  input:
+    -sockfd : 소켓 식별자
+    -msg : 전송할 데이터가 저장된 버퍼
+    -len : 전송할 데이터의 바이트 수
+  output:
+    -정상 : 실제 전송된 바이트 수
+    -오류 : (-1)
+
+7) recv()함수를 통한 소켓에서의 데이터 수신
+
+int recv(int sockfd, void *buf, int len, unsigned int flags);
+  input:
+    -sockfd : 소켓 식별자
+    -msg : 수신 데이터를 저장할 버퍼
+    -len : 수신하려는 데이터의 바이트 수
+  output:
+    -정상 : 실제 수신된 바이트 수
+    -오류 : (-1)
+    //closesocket
+	result = closesocket(clientsocket);
+  //WSACleanup
+	result = WSACleanup();
+    
