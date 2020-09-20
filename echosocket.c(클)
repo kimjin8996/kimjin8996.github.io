@@ -1,0 +1,77 @@
+#include"MySocketError.h"
+#include<WS2tcpip.h>
+#define SERVER_IP "23.23.64.212"
+#define SERVER_PORT 9001
+#pragma comment(lib,"ws2_32.lib")
+
+int main(void)
+{
+	int result = -2345;
+	//WSAStartup
+	WSADATA wData = { 0 };
+	result = WSAStartup(MAKEWORD(2, 2), &wData);
+	if (result == 0) OKMsg("WSAStartup");
+	else ErrorExit("WSAStartup");
+	//socket
+	SOCKET clientSocket;
+	clientSocket = socket(PF_INET, SOCK_STREAM, 0);
+	if (clientSocket == INVALID_SOCKET) ErrorExit("socket");
+	else OKMsg("socket");
+	//connect
+	SOCKADDR_IN serverAddress = { 0 };
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_port = htons(SERVER_PORT);
+	//serverAddress.sin_addr.s_addr = inet_addr(SERVER_IP);
+	//InetPton(AF_INET, TEXT(SERVER_IP), &serverAddress.sin_addr.s_addr);
+	inet_pton(AF_INET, SERVER_IP, &serverAddress.sin_addr);
+	result = connect(clientSocket, (SOCKADDR*)&serverAddress,
+		sizeof(serverAddress));
+	if (result == SOCKET_ERROR) ErrorMsg("connect");
+	else OKMsg("connect");
+
+	char buffer[20] = { 0 };
+	printf("------------------------------------\n");
+	printf(" Echo Client(ver1.0\n");
+	printf(" made by kim\n");
+	printf("------------------------------------\n\n");
+	printf("If you want to quit,typing 'exit'\n\n");
+
+	while (2)
+	{
+		memset(buffer, 0, 20);
+		printf(">>");
+		gets_s(buffer, 20);
+		if (!strcmp(buffer, "exit"))
+			//if (!strcmp(buffer, "exit\n"))
+		{
+			printf("프로그램을 종료하겠습니다.\n");
+			break;
+		}
+		//fgets(buffer, 20, stdin); //file 
+		result = send(clientSocket, (char*)buffer, strlen(buffer) + 1, 0);
+		if (result == SOCKET_ERROR) ErrorMsg("send");
+		else OKMsg("send");
+		memset(buffer, 0, 20);
+		result = recv(clientSocket, (char*)buffer, 20, 0);
+		if (!result)
+		{
+			printf("server disconnected\n");
+			break;
+		}
+		else if (result == SOCKET_ERROR) ErrorMsg("recv");
+		else OKMsg("recv");
+		//gets_s(buffer, 20);
+		//if (!strcmp(buffer, "q"))
+		
+		printf("%s\n", buffer);
+	}
+	//closesocket
+	result = closesocket(clientSocket);
+	if (result == SOCKET_ERROR) ErrorMsg("closesocket");
+	else OKMsg("closesocket");
+	//WSACleanup
+	result = WSACleanup();
+	if (result == SOCKET_ERROR) ErrorMsg("WSACleanup");
+	else OKMsg("WSACleanup");
+	return 0;
+}
