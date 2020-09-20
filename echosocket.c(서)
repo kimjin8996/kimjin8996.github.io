@@ -1,0 +1,89 @@
+#include<WS2tcpip.h>
+#include"MySocketError.h"
+#define SERVER_IP "192.168.0.25"
+#define SERVER_PORT 9001
+#pragma comment(lib,"ws2_32.lib")
+int main(void)
+{
+	int result = -1;
+	//WSAStartup
+	WSADATA wData = { 0 };
+	result = WSAStartup(MAKEWORD(2, 2), &wData);
+	if (result) ErrorExit("WSAStartup");
+	else OKMsg("WSAStartup");
+	//socket - 소켓만들어줘 서버
+	SOCKET serverSocket;
+	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocket == INVALID_SOCKET) ErrorExit("socket");
+	else OKMsg("socket");
+	//bind - IP/PORT/Family
+	SOCKADDR_IN serverAddress = { 0 };
+	serverAddress.sin_family = AF_INET;//PF_INET
+	serverAddress.sin_port = htons(SERVER_PORT);
+	//union struct
+	//serverAddress.sin_addr.s_addr = inet_addr(SERVER_IP);
+	InetPton(AF_INET, TEXT(SERVER_IP), &serverAddress.sin_addr.s_addr);
+	result = bind(serverSocket, (SOCKADDR*)&serverAddress,
+		sizeof(serverAddress));
+	if (result == SOCKET_ERROR) ErrorMsg("bind");
+	else OKMsg("bind");
+	//listen - 기다리는것
+	result = listen(serverSocket, 5);
+	if (result == SOCKET_ERROR) ErrorMsg("listen");
+	else OKMsg("listen");
+	//accept - 소켓만들어줘 접속한 클라이언트
+	SOCKET clientSocket;
+	SOCKADDR_IN clientAddress = { 0 };
+	int sizeClientAddress = sizeof(clientAddress);
+	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddress
+		, &sizeClientAddress);
+	if (clientSocket == INVALID_SOCKET) ErrorMsg("accept");
+	else OKMsg("accept");
+	/*inet_ntoa(clientAddress.sin_addr)*/
+	
+	//데이터송수신
+	char ip[20] = { 0 };
+	if ((result = (int)InetNtop(AF_INET, &clientAddress.sin_addr, ip, sizeof(ip))) == NULL)
+		ErrorMsg("inet_ntop");
+	else
+	printf("client(IP:%s,PORT:%d)accepted\n", InetNtop(AF_INET, &clientAddress.sin_addr, ip, (sizeof(clientAddress) + 1)), ntohs(clientAddress.sin_port));
+
+	char buffer[20] = { 0 };
+
+	while (-234)
+	{
+		memset(buffer, 0, 20);
+		result = recv(clientSocket, (char*)buffer, 20, 0);
+		if (!result)
+		{
+			printf("client disconnect\n");
+			break;
+		}
+		else if
+			(result == SOCKET_ERROR) ErrorMsg("recv"); 
+		else { OKMsg("recv"); 
+		printf("clientMSG:%s\n", buffer);
+		}
+		
+		result = send(clientSocket, (char*)buffer, strlen(buffer) + 1, 0);
+		if (result == SOCKET_ERROR) ErrorMsg("send");
+		else OKMsg("send");
+
+	}
+	printf("client(IP:%s,PORT:%d)accepted\n", InetNtop(AF_INET, &clientAddress.sin_addr, ip, (sizeof(clientAddress) + 1)), ntohs(clientAddress.sin_port));
+
+	//closesocket - 클라이언트소켓을 닫아주는것
+	result = closesocket(clientSocket);
+	if (result == SOCKET_ERROR) ErrorMsg("closesocket-client");
+	else OKMsg("closesocket-client");
+	//closesocket - 서버소켓을 닫아주는 것
+	result = closesocket(serverSocket);
+	if (result == SOCKET_ERROR) ErrorMsg("closesocket-server");
+	else OKMsg("closesocket-server");
+	//WSACleanup
+	result = WSACleanup();
+	if (result == SOCKET_ERROR) ErrorMsg("WSACleanup");
+	else OKMsg("WSACleanup");
+
+	return 0;
+}
